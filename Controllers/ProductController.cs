@@ -15,10 +15,17 @@ public class ProductController : ControllerBase
     // สร้าง Object ของ ApplicationDbContext
     private readonly ApplicationDbContext _context;
 
+    // สร้าง Object สำหรับอ่าน path ของไฟล์
+    private readonly IWebHostEnvironment _env;
+
     // สร้าง Constructor รับค่า ApplicationDbContext
-    public ProductController(ApplicationDbContext context)
+    public ProductController(
+        ApplicationDbContext context,
+        IWebHostEnvironment env
+    )
     {
         _context = context;
+        _env = env;
     }
 
     // ฟังก์ชันสำหรับอ่านข้อมูลจาก product
@@ -101,10 +108,37 @@ public class ProductController : ControllerBase
     // ฟังก์ชันสำหรับเพิ่มข้อมูล product
     // POST: /api/Product
     [HttpPost]
-    public ActionResult<product> AddProduct([FromBody] product product)
+    public async Task<ActionResult<product>> AddProduct([FromForm] product product, IFormFile? image)
     {
         // เพิ่มข้อมูล product
         _context.products.Add(product);
+
+        // ถ้ามีการอัพโหลดไฟล์
+        if(image != null){
+            // กำหนดชื่อไฟล์ภาพใหม่
+            string fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
+
+            // กำหนด path ที่จะบันทึกไฟล์
+            string uploadPath = Path.Combine(_env.WebRootPath, "uploads");
+
+            // ตรวจสอบว่า path นี้มีอยู่หรือไม่ ถ้าไม่มีให้สร้าง path นี้
+            if(!Directory.Exists(uploadPath)){
+                Directory.CreateDirectory(uploadPath);
+            }
+
+            using(var fileStream = new FileStream(
+                Path.Combine(uploadPath, fileName), 
+                FileMode.Create)
+            ){
+                await image.CopyToAsync(fileStream);
+            }
+
+            // บันทึกชื่อไฟล์ภาพลงฐานข้อมูล
+            product.productpicture = fileName;
+        } else{
+            product.productpicture = "noimg.jpg";
+        }
+
         // บันทึกข้อมูลลงฐานข้อมูล
         _context.SaveChanges();
 
@@ -115,7 +149,7 @@ public class ProductController : ControllerBase
     // ฟังก์ชันสำหรับการแก้ไขข้อมูล product
     // PUT: /api/Product/1
     [HttpPut("{id}")]
-    public ActionResult<product> UpdateProduct(int id, [FromBody] product product)
+    public async Task<ActionResult<product>> UpdateProduct(int id, [FromForm] product product, IFormFile? image)
     {
         // ค้นหาข้อมูลจากตาราง Products ตาม ID
         var prod = _context.products.Find(id);
@@ -131,6 +165,35 @@ public class ProductController : ControllerBase
         prod.unitprice = product.unitprice;
         prod.unitinstock = product.unitinstock;
         prod.categoryid = product.categoryid;
+        prod.modifieddate = product.modifieddate;
+
+        // ตรวจสอบว่ามีการอัพโหลดไฟล์รูปภาพหรือไม่
+        if(image != null){
+            // กำหนดชื่อไฟล์รูปภาพใหม่
+            string fileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
+
+            // กำหนด path ที่จะบันทึกไฟล์
+            string uploadPath = Path.Combine(_env.WebRootPath, "uploads");
+
+            // ตรวจสอบว่าโฟลเดอร์ uploads มีหรือไม่
+            if (!Directory.Exists(uploadPath))
+            {
+                Directory.CreateDirectory(uploadPath);
+            }
+
+            using (var fileStream = new FileStream(Path.Combine(uploadPath, fileName), FileMode.Create))
+            {
+                await image.CopyToAsync(fileStream);
+            }
+
+            // ลบไฟล์รูปภาพเดิม ถ้ามีการอัพโหลดรูปภาพใหม่ และรูปภาพเดิมไม่ใช่ noimg.jpg
+            if(prod.productpicture != "noimg.jpg"){
+                System.IO.File.Delete(Path.Combine(uploadPath, prod.productpicture!));
+            }
+
+            // บันทึกชื่อไฟล์รูปภาพลงในฐานข้อมูล
+            prod.productpicture = fileName;
+        }
     
         _context.SaveChanges();
 
@@ -150,6 +213,15 @@ public class ProductController : ControllerBase
         if (prod == null)
         {
             return NotFound();
+        }
+
+        // ตรวจสอบว่ามีไฟล์รูปภาพหรือไม่
+        if(prod.productpicture != "noimg.jpg"){
+            // กำหนด path ที่จะลบไฟล์
+            string uploadPath = Path.Combine(_env.WebRootPath, "uploads");
+
+            // ลบไฟล์รูปภาพ
+            System.IO.File.Delete(Path.Combine(uploadPath, prod.productpicture!));
         }
 
         // ลบข้อมูลในตาราง Products
