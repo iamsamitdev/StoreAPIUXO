@@ -48,8 +48,8 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins(
             // "*", // Allow any origin
-            "http://localhost:4200", // Angular App
-            "http://localhost:3000" // React App
+            "http://localhost:4200", // Angular Apps
+            "http://localhost:3000" // React Apps
         )
         .AllowAnyMethod()
         .AllowAnyHeader();
