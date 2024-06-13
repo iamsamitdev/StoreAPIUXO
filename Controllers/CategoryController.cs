@@ -5,7 +5,7 @@ using StoreAPIUXO.Models;
 
 namespace StoreAPIUXO.Controllers;
 
-// [Authorize] // ต้องเข้าสู่ระบบก่อนเข้าถึง Controller นี้
+[Authorize] // ต้องเข้าสู่ระบบก่อนเข้าถึง Controller นี้
 // [Authorize(Roles = UserRolesModel.Admin)] // ต้องเข้าสู่ระบบด้วยบทบาท Admin เท่านั้น
 [ApiController]
 [Route("api/[controller]")]
