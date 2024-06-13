@@ -40,6 +40,22 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+// Allow CORS
+builder.Services.AddCors(options => 
+{
+ options.AddPolicy("MultipleOrigins",
+    policy =>
+    {
+        policy.WithOrigins(
+            // "*", // Allow any origin
+            "http://localhost:4200", // Angular App
+            "http://localhost:3000" // React App
+        )
+        .AllowAnyMethod()
+        .AllowAnyHeader();
+    });
+});
+
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -89,6 +105,12 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
+
+// Use Static Files
+app.UseStaticFiles();
+
+// Use CORS
+app.UseCors("MultipleOrigins");
 
 // Add Authentication
 app.UseAuthentication();
