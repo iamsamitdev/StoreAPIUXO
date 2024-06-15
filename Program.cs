@@ -65,6 +65,7 @@ builder.Services.AddCors(options =>
             "http://localhost:5000", // Blazor Apps
             "http://localhost:5001" // Blazor Apps
         )
+        .SetIsOriginAllowedToAllowWildcardSubdomains()
         .AllowAnyMethod()
         .AllowAnyHeader();
     });
